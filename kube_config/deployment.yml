@@ -1,0 +1,34 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: ${KS_APP_NAME}
+  namespace: ${KS_NAMESPACE}
+  labels:
+    app: ${KS_APP_NAME}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ${KS_APP_NAME}
+  template:
+    metadata:
+      labels:
+        app: ${KS_APP_NAME}
+    spec:
+      serviceAccountName: ${KS_NAMESPACE}
+      containers:
+        - name: ${KS_APP_NAME}
+          image: "${ECR_HOST}/${ECR_REPO}:${VERSION}"
+          ports:
+            - containerPort: 80
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: AWS_DEFAULT_REGION
+              value: ${AWS_DEFAULT_REGION}
+            - name: KINESIS_STREAM
+              value: ${KINESIS_STREAM}
+            - name: FINNHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ${KS_NAMESPACE}
+                  key: finnhub_token
