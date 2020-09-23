@@ -13,14 +13,14 @@ def test_transform_ping():
 def test_transform_one_trade():
     ingestor = get_trade_ingestor()
     assert ingestor.transform('{"data":[{"p":354.9084,"s":"TSLA","t":1599676370725,"v":100}],"type":"trade"}') == [
-        {"Data": '{"p": 354.9084, "s": "TSLA", "t": 1599676370725, "v": 100}', "PartitionKey": "TSLA"}
+        {"Data": '{"traded_at": "2020-09-09T14:32:50Z", "symbol": "TSLA", "price": 354.9084, "volume": 100}', "PartitionKey": "TSLA"}
     ]
 
 def test_transform_trade_multiple():
     ingestor = get_trade_ingestor()
     assert ingestor.transform('{"data":[{"p":354.9084,"s":"TSLA","t":1599676370725,"v":100}, {"p":354.8084,"s":"TSLA","t":1599676370725,"v":10}],"type":"trade"}') == [
-        {"Data": '{"p": 354.9084, "s": "TSLA", "t": 1599676370725, "v": 100}', "PartitionKey": "TSLA"},
-        {"Data": '{"p": 354.8084, "s": "TSLA", "t": 1599676370725, "v": 10}', "PartitionKey": "TSLA"}
+        {"Data": '{"traded_at": "2020-09-09T14:32:50Z", "symbol": "TSLA", "price": 354.9084, "volume": 100}', "PartitionKey": "TSLA"},
+        {"Data": '{"traded_at": "2020-09-09T14:32:50Z", "symbol": "TSLA", "price": 354.8084, "volume": 10}', "PartitionKey": "TSLA"}
     ]
 
 def test_transform_trade_no_data():

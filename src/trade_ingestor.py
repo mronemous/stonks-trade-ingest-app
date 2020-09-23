@@ -2,6 +2,7 @@ import websocket
 import boto3
 import json
 import structlog
+from type_utils import convert_to_iso8601
 
 log = structlog.get_logger()
 
@@ -10,6 +11,7 @@ class TradeIngestor:
     """ Ingest trades from finnhub into Kinesis.
     Kinesis and websocket interactions confined to run to make testing easier.
     """
+
     def __init__(self, stream_name: str, finnhub_token: str, symbols: [str] = []):
         self.stream_name = stream_name
         self.finnhub_token = finnhub_token
@@ -30,11 +32,8 @@ class TradeIngestor:
             elif message.get("type") == "trade":
                 data = message.get('data')
                 if data:
-                    for row in data:
-                        rows.append({
-                            "Data": json.dumps(row),
-                            "PartitionKey": row.get('s')
-                        })
+                    rows = [{"Data": json.dumps(self.transform_row(row)),
+                             "PartitionKey": row.get('s')} for row in data]
                     log.info("transformed", rows=rows)
             else:
                 log.info("on_message unknown type", data=message)
@@ -42,6 +41,14 @@ class TradeIngestor:
             log.exception("Unable to json decode", raw_msg=raw_msg)
 
         return rows
+
+    def transform_row(self, row):
+        return {
+            "traded_at": convert_to_iso8601(epoch_ms=row.get('t')),
+            "symbol": row.get('s'),
+            "price": row.get('p'),
+            "volume": row.get('v')
+        }
 
     def get_subscriptions(self) -> []:
         return [json.dumps({"type": "subscribe", "symbol": symbol}) for symbol in self.symbols]
@@ -76,11 +83,8 @@ class TradeIngestor:
         log.info("opening websocket")
         websocket.enableTrace(True)
         ws = websocket.WebSocketApp("wss://ws.finnhub.io?token={0}".format(self.finnhub_token),
-                                          on_message=on_message,
-                                          on_error=on_error,
-                                          on_close=on_close,
-                                          on_open=on_open)
+                                    on_message=on_message,
+                                    on_error=on_error,
+                                    on_close=on_close,
+                                    on_open=on_open)
         ws.run_forever()
-
-
-

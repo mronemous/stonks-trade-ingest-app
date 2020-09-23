@@ -6,7 +6,6 @@ log = structlog.get_logger()
 
 
 def main():
-
     symbols: [str] = ["AAPL", "AMZN", "TSLA"]
 
     ingestor = TradeIngestor(stream_name=config("KINESIS_STREAM"),
